@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>Web Call</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <main class="app">
+    <section class="card" id="home">
+      <div class="logo">☎</div>
+      <h1>Web Call</h1>
+      <p class="muted">โทรคุยกันผ่านเว็บแบบ 1 ต่อ 1</p>
+
+      <label for="roomInput">รหัสห้อง</label>
+      <input id="roomInput" maxlength="80" placeholder="เช่น ABC123">
+
+      <button id="createBtn" class="primary">สร้างห้องโทร</button>
+      <button id="joinBtn">เข้าห้อง</button>
+
+      <p id="homeStatus" class="status"></p>
+      <p class="hint">ส่งรหัสห้องให้อีกคน แล้วให้อีกฝ่ายเปิดเว็บนี้และใส่รหัสเดียวกัน</p>
+    </section>
+
+    <section class="card call hidden" id="call">
+      <div class="topbar">
+        <div>
+          <strong>ห้อง <span id="roomLabel">-</span></strong>
+          <div id="callStatus" class="muted">กำลังเชื่อมต่อ...</div>
+        </div>
+        <button id="copyBtn" class="small">คัดลอกลิงก์</button>
+      </div>
+
+      <div class="avatar">🎙️</div>
+      <h2 id="peerText">กำลังรออีกฝ่าย...</h2>
+
+      <audio id="remoteAudio" autoplay playsinline></audio>
+
+      <div class="controls">
+        <button id="muteBtn" class="control">🎤<span>ปิดไมค์</span></button>
+        <button id="speakerBtn" class="control">🔊<span>เสียง</span></button>
+        <button id="hangupBtn" class="control danger">📞<span>วางสาย</span></button>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="/js/app.js"></script>
+</body>
+</html>

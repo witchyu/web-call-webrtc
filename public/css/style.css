@@ -1,0 +1,50 @@
+* { box-sizing: border-box; }
+body {
+  margin: 0; min-height: 100vh; font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  background: #f3f4f6; color: #111827; display: grid; place-items: center;
+}
+.app { width: min(100%, 520px); padding: 20px; }
+.card {
+  background: white; border-radius: 24px; padding: 28px;
+  box-shadow: 0 12px 40px rgba(0,0,0,.08);
+}
+.logo {
+  width: 72px; height: 72px; border-radius: 50%; display: grid; place-items: center;
+  margin: 0 auto 16px; background: #111827; color: white; font-size: 34px;
+}
+h1,h2 { text-align: center; margin: 8px 0; }
+.muted { color: #6b7280; text-align: center; }
+label { display:block; margin: 24px 0 8px; font-weight: 600; }
+input {
+  width: 100%; padding: 15px; border: 1px solid #d1d5db; border-radius: 12px;
+  font-size: 16px; outline: none;
+}
+button {
+  width: 100%; margin-top: 12px; padding: 15px; border: 0; border-radius: 12px;
+  background: #e5e7eb; font-size: 16px; font-weight: 700; cursor: pointer;
+}
+button.primary { background:#111827; color:white; }
+button:active { transform: scale(.99); }
+.status { min-height: 22px; text-align:center; margin: 14px 0 0; }
+.hint { font-size: 13px; color:#6b7280; text-align:center; line-height:1.5; }
+.hidden { display:none; }
+.topbar { display:flex; justify-content:space-between; align-items:center; gap:12px; }
+.topbar strong { font-size: 15px; }
+.topbar .muted { text-align:left; font-size: 13px; margin-top:4px; }
+.small { width:auto; margin:0; padding:9px 12px; font-size:13px; }
+.call { text-align:center; }
+.avatar {
+  width:130px; height:130px; border-radius:50%; display:grid; place-items:center;
+  margin:55px auto 22px; background:#eef2ff; font-size:54px;
+}
+.controls { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-top:45px; }
+.control { margin:0; padding:14px 8px; }
+.control span { display:block; font-size:12px; margin-top:5px; }
+.control.danger { background:#dc2626; color:white; }
+@media (prefers-color-scheme: dark) {
+  body { background:#111827; color:#f9fafb; }
+  .card { background:#1f2937; }
+  input { background:#111827; color:white; border-color:#374151; }
+  button { background:#374151; color:white; }
+  .muted,.hint { color:#9ca3af; }
+}

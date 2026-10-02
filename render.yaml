@@ -1,0 +1,14 @@
+# Render Blueprint — สร้างบริการจากไฟล์นี้ได้ที่ Dashboard → New → Blueprint
+# ตัวแปร TURN (CF_TURN_* / METERED_* / TURN_*) ให้เพิ่มเองในหน้า Environment ของบริการ
+# เพราะเป็นความลับ ไม่ควรอยู่ในไฟล์ที่ commit ขึ้น Git
+services:
+  - type: web
+    name: web-call
+    runtime: node
+    plan: free            # เปลี่ยนเป็น starter ขึ้นไปถ้าไม่อยากให้เซิร์ฟเวอร์หลับเมื่อไม่มีคนใช้
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: 22

@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#111827">
   <title>Web Call</title>
   <link rel="stylesheet" href="/css/style.css">
 </head>
@@ -14,27 +15,32 @@
       <p class="muted">โทรคุยกันผ่านเว็บแบบ 1 ต่อ 1</p>
 
       <label for="roomInput">รหัสห้อง</label>
-      <input id="roomInput" maxlength="80" placeholder="เช่น ABC123">
+      <input id="roomInput" maxlength="40" autocomplete="off" autocapitalize="characters" placeholder="เช่น ABC123">
 
       <button id="createBtn" class="primary">สร้างห้องโทร</button>
       <button id="joinBtn">เข้าห้อง</button>
 
-      <p id="homeStatus" class="status"></p>
-      <p class="hint">ส่งรหัสห้องให้อีกคน แล้วให้อีกฝ่ายเปิดเว็บนี้และใส่รหัสเดียวกัน</p>
+      <p id="homeStatus" class="status" role="status"></p>
+      <p class="hint">กด “สร้างห้องโทร” แล้วส่งลิงก์ให้อีกคน หรือส่งรหัสห้องให้อีกฝ่ายพิมพ์เข้ามา</p>
     </section>
 
     <section class="card call hidden" id="call">
       <div class="topbar">
         <div>
           <strong>ห้อง <span id="roomLabel">-</span></strong>
-          <div id="callStatus" class="muted">กำลังเชื่อมต่อ...</div>
+          <div id="callStatus" class="muted" role="status">กำลังเชื่อมต่อ...</div>
         </div>
         <button id="copyBtn" class="small">คัดลอกลิงก์</button>
       </div>
 
+      <p id="turnWarn" class="warn hidden">⚠ เซิร์ฟเวอร์ยังไม่ได้ตั้งค่า TURN — บางเครือข่าย (เช่น 4G/5G, Wi-Fi องค์กร) อาจเชื่อมต่อไม่ได้</p>
+
       <div class="avatar">🎙️</div>
       <h2 id="peerText">กำลังรออีกฝ่าย...</h2>
+      <div id="timer" class="timer">00:00</div>
+      <div id="routeBadge" class="badge hidden"></div>
 
+      <button id="unlockBtn" class="hidden">แตะเพื่อเปิดเสียง</button>
       <audio id="remoteAudio" autoplay playsinline></audio>
 
       <div class="controls">

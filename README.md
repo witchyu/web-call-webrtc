@@ -1,38 +1,78 @@
-# Web Call — 1-to-1 WebRTC Voice Call
+# Web Call — โทรเสียง 1 ต่อ 1 ผ่านเบราว์เซอร์ (WebRTC)
 
-เว็บโทรเสียง 1 ต่อ 1 ผ่านเบราว์เซอร์ ใช้ WebRTC + WebSocket signaling
+เปิดเว็บ → สร้างห้อง → ส่งลิงก์ → คุยกันได้เลย ไม่ต้องติดตั้งแอป
+Node.js + Express + WebSocket (signaling) + WebRTC (เสียงส่งตรงระหว่างผู้ใช้)
 
-## ต้องมี
-- Node.js 20+
-- GitHub Codespaces หรือเครื่องที่รัน Node.js ได้
+## ทำไมเวอร์ชันนี้ "โทรได้จริง"
 
-## รันใน Codespaces
+เวอร์ชันเดิมใช้ STUN อย่างเดียว ซึ่งต่อกันไม่ได้เมื่อฝั่งใดฝั่งหนึ่งอยู่หลัง NAT เข้ม ๆ (4G/5G, Wi-Fi องค์กร/โรงเรียน) เวอร์ชันนี้จึง:
 
-```bash
-npm install
-npm start
-```
+- **เพิ่ม TURN** (รีเลย์เสียง) ผ่าน `/api/ice` — เซิร์ฟเวอร์ขอ credential ชั่วคราวจากผู้ให้บริการแล้วส่งให้เบราว์เซอร์ ไม่เอา secret ไปไว้ฝั่ง client
+- **แก้บั๊กสัญญาณ**: ICE candidate หายเพราะมาก่อน remote description, คนที่เข้าห้องก่อนออกแล้วกลับมาใหม่แล้วไม่มีใครส่ง offer, ข้อความสัญญาณชนกันเพราะประมวลผลพร้อมกัน
+- **เสถียรบน Render**: ping/pong กันโดนตัดเพราะ idle, client ต่อ WebSocket ใหม่เองเมื่อหลุด, จัดการ SIGTERM ตอน deploy, ตรวจ Origin ของ WebSocket
+- **ICE restart** อัตโนมัติเมื่อสัญญาณสะดุด, แสดงเวลาคุย, แสดงว่าเชื่อมแบบตรง (P2P) หรือผ่าน TURN, กันหน้าจอมือถือดับระหว่างโทร
 
-จากนั้นเปิดแท็บ **PORTS** ของ Codespaces และเปิดพอร์ต 3000 เป็น **Public** หากต้องการให้อีกคนเข้าจากอินเทอร์เน็ต
+## Deploy บน Render
+
+1. อัปโหลดโฟลเดอร์นี้ขึ้น GitHub
+2. Render Dashboard → **New → Blueprint** → เลือก repo (อ่านค่าจาก `render.yaml`)
+   หรือ **New → Web Service** แล้วตั้ง Build Command `npm install`, Start Command `npm start`, Health Check Path `/health`
+3. ตั้งค่า TURN (หัวข้อถัดไป) ในหน้า **Environment** แล้ว Deploy
+4. เปิด `https://ชื่อแอป.onrender.com/health` ควรเห็น `{"ok":true,"ice":"cloudflare"}` (หรือชื่อผู้ให้บริการที่ตั้งไว้) — ถ้าเป็น `"stun-only"` แปลว่ายังไม่ได้ตั้ง TURN
+
+> Render ให้ HTTPS มาให้แล้ว ซึ่งจำเป็นเพราะเบราว์เซอร์อนุญาตไมโครโฟนเฉพาะบน HTTPS
+
+## ตั้งค่า TURN (จำเป็นถ้าอยากให้โทรได้ทุกเครือข่าย)
+
+ตามที่ผมทราบ Render ไม่เปิดพอร์ต UDP/TCP ดิบให้ภายนอก จึงรัน TURN server (coturn) บน Render ไม่ได้ — ให้ใช้บริการ TURN ภายนอกแทน เลือกเจ้าเดียว:
+
+### ตัวเลือก A: Cloudflare Realtime TURN
+1. Cloudflare Dashboard → **Realtime → TURN Server → Create**
+2. จดค่า **Turn Token ID** และ **API Token** (แสดงครั้งเดียว)
+3. ใส่ใน Render Environment:
+   - `CF_TURN_KEY_ID` = Turn Token ID
+   - `CF_TURN_API_TOKEN` = API Token
+
+### ตัวเลือก B: Metered
+1. สมัครที่ metered.ca → **Dashboard → TURN Server → Add Credential**
+2. ใส่ใน Render Environment:
+   - `METERED_APP_NAME` = ชื่อแอป (ส่วนหน้า `.metered.live`)
+   - `METERED_API_KEY` = API Key ของ credential นั้น
+
+### ตัวเลือก C: รัน coturn เองบน VPS
+ดูตัวอย่าง `docs/coturn.conf` แล้วตั้ง `TURN_URLS` + `TURN_SECRET` (รายละเอียดใน `.env.example`)
+
+ทุกเจ้ามี free tier แต่ปริมาณและราคาเปลี่ยนได้ — เช็กหน้า pricing ของผู้ให้บริการก่อนใช้งานจริง เสียงคุยใช้ข้อมูลน้อยมากเมื่อเทียบกับวิดีโอ และสายส่วนใหญ่จะเชื่อมตรงโดยไม่ผ่าน TURN
 
 ## วิธีทดสอบ
 
-1. เปิดเว็บบนอุปกรณ์ A
-2. กด `สร้างห้องโทร`
-3. กด `คัดลอกลิงก์`
-4. ส่งลิงก์ให้อุปกรณ์ B
-5. อุปกรณ์ B เปิดลิงก์และอนุญาต Microphone
-6. ระบบจะเชื่อมเสียงผ่าน WebRTC
+1. เครื่อง A เปิดเว็บ → **สร้างห้องโทร** → **คัดลอกลิงก์**
+2. เครื่อง B เปิดลิงก์ → **เข้าห้อง** → อนุญาตไมโครโฟน
+3. ทดสอบจริงให้ **คนละเครือข่าย** (เช่น เครื่องหนึ่งใช้เน็ตมือถือ) เพราะเครื่องในวง Wi-Fi เดียวกันจะเชื่อมตรงได้เสมอ ทำให้ไม่ได้ทดสอบ TURN
+4. ดูป้ายใต้ตัวจับเวลา: "เชื่อมต่อตรง (P2P)" หรือ "เชื่อมผ่านรีเลย์ (TURN)"
 
-## หมายเหตุสำคัญ
+รันในเครื่อง: `npm install && npm start` แล้วเปิด `http://localhost:3000` (localhost ใช้ไมโครโฟนได้โดยไม่ต้อง HTTPS) ใส่ค่าใน `.env` ได้โดยรันด้วย `node --env-file=.env server.js`
 
-โปรเจกต์เริ่มต้นนี้ใช้ STUN อย่างเดียว จึงเหมาะกับการทดลองและเครือข่ายทั่วไป แต่บางเครือข่าย/NAT/firewall อาจเชื่อมต่อไม่ได้
+## แก้ปัญหาที่พบบ่อย
 
-สำหรับ production ควรเพิ่ม TURN server เพื่อให้การเชื่อมต่อเสถียรขึ้น เช่น coturn หรือผู้ให้บริการ TURN
+| อาการ | สาเหตุ / วิธีแก้ |
+|---|---|
+| เห็นแถบเหลือง "ยังไม่ได้ตั้งค่า TURN" | ยังไม่ได้ใส่ env ของ TURN หรือผู้ให้บริการตอบ error — ดู Logs บน Render หา `[ice] ... failed` |
+| ต่อกันได้ในบ้านแต่ข้ามเครือข่ายเงียบ | ไม่มี TURN หรือ credential ผิด ตรวจ `/health` ว่าไม่ใช่ `stun-only` |
+| กดเข้าห้องแล้วค้างนานตอนเปิดครั้งแรก | แพลน Free ของ Render หลับเมื่อไม่มีคนใช้ ปลุกใช้เวลาประมาณ 1 นาที — อัปเกรดแพลน หรือใช้ตัวเรียก `/health` เป็นระยะ |
+| ไม่มีเสียงบน iPhone/Safari | แตะปุ่ม "แตะเพื่อเปิดเสียง" ที่ขึ้นมา |
+| "ห้องนี้มีคนอยู่ครบ 2 คนแล้ว" | ห้องรองรับ 2 คน สร้างห้องใหม่ |
 
 ## โครงสร้าง
 
-- `server.js` — Express + WebSocket signaling
-- `public/index.html` — หน้าเว็บ
-- `public/css/style.css` — UI
-- `public/js/app.js` — WebRTC/client logic
+- `server.js` — Express, WebSocket signaling (`/ws`), `/api/ice`, `/health`
+- `ice.js` — เลือกผู้ให้บริการ STUN/TURN และ cache credential
+- `public/` — หน้าเว็บ (`index.html`, `css/style.css`, `js/app.js`)
+- `render.yaml` — Blueprint สำหรับ Render
+- `docs/coturn.conf` — ตัวอย่างตั้งค่า coturn (ตัวเลือก C)
+
+## ข้อจำกัด
+
+- โทรได้เฉพาะ **เบราว์เซอร์ ↔ เบราว์เซอร์** (เสียงอย่างเดียว ห้องละ 2 คน) ไม่ได้โทรออกเบอร์โทรศัพท์จริง ถ้าต้องการโทรเข้าเบอร์มือถือ/เบอร์บ้านต้องต่อผู้ให้บริการโทรศัพท์ เช่น Twilio หรือ Telnyx เพิ่ม
+- ไม่มีระบบล็อกอิน: ใครรู้รหัสห้องก็เข้าได้ รหัสห้องที่สร้างอัตโนมัติสุ่ม 8 ตัวอักษร เดาได้ยาก แต่ควรส่งลิงก์ให้เฉพาะคนที่ต้องการให้คุยด้วย
+- สถานะห้องเก็บในหน่วยความจำของ instance เดียว ถ้าสเกลเป็นหลายเครื่องต้องเพิ่ม Redis pub/sub

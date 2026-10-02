@@ -2,7 +2,10 @@
 // ลำดับความสำคัญ: Cloudflare → Metered → coturn (shared secret) → TURN แบบ static → STUN อย่างเดียว
 import crypto from "crypto";
 
-const env = process.env;
+// trim ทุกค่า: ถ้าวาง token ลง Render แล้วมีช่องว่าง/ขึ้นบรรทัดใหม่ติดมา จะทำให้ 401 โดยไม่รู้ตัว
+const env = Object.fromEntries(
+  Object.entries(process.env).map(([k, v]) => [k, typeof v === "string" ? v.trim() : v])
+);
 const CRED_TTL = 24 * 60 * 60;      // อายุ credential ที่ขอจากผู้ให้บริการ (วินาที)
 const CACHE_MS = 60 * 60 * 1000;    // cache ฝั่งเซิร์ฟเวอร์ 1 ชม. (ต่ำกว่า TTL มาก)
 const RETRY_AFTER_FAIL_MS = 15_000;
@@ -81,6 +84,12 @@ const PROVIDERS = [
 const active = PROVIDERS.find(p => p.ok);
 export const iceMode = active ? active.name : "stun-only";
 
+let lastError = null;
+// ใช้ใน /health เพื่อดูสถานะ TURN โดยไม่ต้องเปิด log (ไม่มีข้อมูลลับ)
+export function iceStatus() {
+  return { ice: iceMode, turnError: lastError };
+}
+
 export function hasTurn(list) {
   return list.some(s => s.urls.some(u => /^turns?:/i.test(u)));
 }
@@ -98,10 +107,12 @@ export async function getIceServers() {
     .then(list => {
       if (!list.length) throw new Error("empty ICE server list");
       cache = { list, until: Date.now() + CACHE_MS };
+      lastError = null;
       return list;
     })
     .catch(err => {
       console.error(`[ice] ${active.name} failed:`, err.message);
+      lastError = err.message;
       failUntil = Date.now() + RETRY_AFTER_FAIL_MS;
       return cache?.list ?? FALLBACK_ICE;
     })

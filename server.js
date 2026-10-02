@@ -3,7 +3,7 @@ import http from "http";
 import path from "path";
 import { fileURLToPath } from "url";
 import { WebSocketServer } from "ws";
-import { getIceServers, hasTurn, iceMode } from "./ice.js";
+import { getIceServers, hasTurn, iceMode, iceStatus } from "./ice.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT) || 3000;
@@ -41,7 +41,10 @@ setInterval(() => {
   for (const [k, v] of hits) if (now > v.reset) hits.delete(k);
 }, 60_000).unref();
 
-app.get("/health", (_req, res) => res.json({ ok: true, ice: iceMode }));
+app.get("/health", async (_req, res) => {
+  const list = await getIceServers(); // ลองขอ TURN จริง เพื่อให้เห็น error ทันที
+  res.json({ ok: true, ...iceStatus(), turnWorking: hasTurn(list) });
+});
 
 app.get("/api/ice", rateLimit(30, 60_000), async (_req, res) => {
   res.setHeader("Cache-Control", "no-store");
